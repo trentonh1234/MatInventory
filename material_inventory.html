@@ -7,18 +7,19 @@
         #signature-pad { border: 1px solid #000; width: 200px; height: 100px; }
         table { border-collapse: collapse; }
         th, td { border: 1px solid #000; padding: 5px; }
+        input[readonly] { background-color: #f0f0f0; }
     </style>
 </head>
 <body>
     <h1>MATERIAL INVENTORY</h1>
     <h2>HABCO, Inc.</h2>
-    <label>Date: <input type="date" id="date"></label><br>
+    <label>Date: <input type="date" id="date" onchange="updateTotals()"></label><br>
     <label>Used <input type="radio" name="status" value="Used" onchange="updateTotals()"></label>
     <label>Returned <input type="radio" name="status" value="Returned" onchange="updateTotals()"></label><br>
     <table id="grid">
         <tr><th>QTY</th><th>Item</th><th>Unit Cost</th><th>Cost</th></tr>
     </table>
-    <label>Job #: <input type="text" id="job"></label><br>
+    <label>Job #: <input type="text" id="job" onchange="updateTotals()"></label><br>
     <label>Signed: <canvas id="signature-pad"></canvas><button onclick="saveSignature()">Save Signature</button></label><br>
     <label>Sub Total: <span id="subTotal">0.00</span></label><br>
     <label>Sales Tax: <span id="salesTax">0.00</span></label><br>
@@ -26,10 +27,10 @@
     <button onclick="submitForm()">Submit</button>
     <script>
         const canvas = document.getElementById('signature-pad');
-        const signaturePad = new SignaturePad(canvas);
+        const signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)' });
         let grid = document.getElementById('grid');
         for (let i = 1; i <= 27; i++) { // 27 rows to match A7-A33
-            grid.innerHTML += `<tr><td><input type="number" id="qty${i}" onchange="updateTotals()"></td><td><input type="text" id="item${i}"></td><td><input type="number" id="unitCost${i}" onchange="updateTotals()"></td><td><input type="number" id="cost${i}" readonly></td></tr>`;
+            grid.innerHTML += `<tr><td><input type="number" id="qty${i}" onchange="updateTotals()"></td><td><input type="text" id="item${i}" onchange="updateTotals()"></td><td><input type="number" id="unitCost${i}" onchange="updateTotals()"></td><td><input type="number" id="cost${i}" readonly></td></tr>`;
         }
         function updateTotals() {
             let total = 0;
@@ -48,12 +49,12 @@
             if (signaturePad.isEmpty()) {
                 alert("Please provide a signature first.");
             } else {
-                const dataURL = signaturePad.toDataURL();
+                const dataURL = signaturePad.toDataURL('image/png');
                 const link = document.createElement('a');
                 link.download = 'signature.png';
                 link.href = dataURL;
                 link.click();
-                alert("Signature saved as 'signature.png'. Please upload this file separately.");
+                alert("Signature saved as 'signature.png'. Please keep this file with your submission.");
             }
         }
         function submitForm() {
@@ -69,16 +70,16 @@
             let gridData = [];
             for (let i = 1; i <= 27; i++) {
                 gridData.push({
-                    qty: document.getElementById(`qty${i}`).value,
-                    item: document.getElementById(`item${i}`).value,
-                    unitCost: document.getElementById(`unitCost${i}`).value,
-                    cost: document.getElementById(`cost${i}`).value
+                    qty: document.getElementById(`qty${i}`).value || '',
+                    item: document.getElementById(`item${i}`).value || '',
+                    unitCost: document.getElementById(`unitCost${i}`).value || '',
+                    cost: document.getElementById(`cost${i}`).value || ''
                 });
             }
             formData.grid = gridData;
-            console.log(JSON.stringify(formData, null, 2)); // For testing
-            alert("Form data logged to console. Upload signature.png separately.");
-            // Add server-side save logic here if hosted
+            console.log(JSON.stringify(formData, null, 2)); // Log to console for now
+            alert("Form submitted! Data logged to console. Save signature.png separately.");
+            // Add server-side save logic if hosted (e.g., PHP as shown earlier)
         }
     </script>
 </body>
