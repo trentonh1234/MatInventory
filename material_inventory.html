@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Material Inventory Form</title>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <style>
+        #signature-pad { border: 1px solid #000; width: 200px; height: 100px; }
+        table { border-collapse: collapse; }
+        th, td { border: 1px solid #000; padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>MATERIAL INVENTORY</h1>
+    <h2>HABCO, Inc.</h2>
+    <label>Date: <input type="date" id="date"></label><br>
+    <label>Used <input type="radio" name="status" value="Used" onchange="updateTotals()"></label>
+    <label>Returned <input type="radio" name="status" value="Returned" onchange="updateTotals()"></label><br>
+    <table id="grid">
+        <tr><th>QTY</th><th>Item</th><th>Unit Cost</th><th>Cost</th></tr>
+    </table>
+    <label>Job #: <input type="text" id="job"></label><br>
+    <label>Signed: <canvas id="signature-pad"></canvas><button onclick="saveSignature()">Save Signature</button></label><br>
+    <label>Sub Total: <span id="subTotal">0.00</span></label><br>
+    <label>Sales Tax: <span id="salesTax">0.00</span></label><br>
+    <label>TOTAL: <span id="total">0.00</span></label><br>
+    <button onclick="submitForm()">Submit</button>
+    <script>
+        const canvas = document.getElementById('signature-pad');
+        const signaturePad = new SignaturePad(canvas);
+        let grid = document.getElementById('grid');
+        for (let i = 1; i <= 27; i++) { // 27 rows to match A7-A33
+            grid.innerHTML += `<tr><td><input type="number" id="qty${i}" onchange="updateTotals()"></td><td><input type="text" id="item${i}"></td><td><input type="number" id="unitCost${i}" onchange="updateTotals()"></td><td><input type="number" id="cost${i}" readonly></td></tr>`;
+        }
+        function updateTotals() {
+            let total = 0;
+            for (let i = 1; i <= 27; i++) {
+                let qty = parseFloat(document.getElementById(`qty${i}`).value) || 0;
+                let unitCost = parseFloat(document.getElementById(`unitCost${i}`).value) || 0;
+                let cost = qty * unitCost;
+                document.getElementById(`cost${i}`).value = cost.toFixed(2);
+                total += cost;
+            }
+            document.getElementById("subTotal").textContent = total.toFixed(2);
+            document.getElementById("salesTax").textContent = (total * 0.05).toFixed(2);
+            document.getElementById("total").textContent = (total * 1.05).toFixed(2);
+        }
+        function saveSignature() {
+            if (signaturePad.isEmpty()) {
+                alert("Please provide a signature first.");
+            } else {
+                const dataURL = signaturePad.toDataURL();
+                const link = document.createElement('a');
+                link.download = 'signature.png';
+                link.href = dataURL;
+                link.click();
+                alert("Signature saved as 'signature.png'. Please upload this file separately.");
+            }
+        }
+        function submitForm() {
+            let formData = {
+                date: document.getElementById("date").value,
+                status: document.querySelector('input[name="status"]:checked')?.value || '',
+                job: document.getElementById("job").value,
+                signed: "See attached signature.png",
+                subTotal: document.getElementById("subTotal").textContent,
+                salesTax: document.getElementById("salesTax").textContent,
+                total: document.getElementById("total").textContent
+            };
+            let gridData = [];
+            for (let i = 1; i <= 27; i++) {
+                gridData.push({
+                    qty: document.getElementById(`qty${i}`).value,
+                    item: document.getElementById(`item${i}`).value,
+                    unitCost: document.getElementById(`unitCost${i}`).value,
+                    cost: document.getElementById(`cost${i}`).value
+                });
+            }
+            formData.grid = gridData;
+            console.log(JSON.stringify(formData, null, 2)); // For testing
+            alert("Form data logged to console. Upload signature.png separately.");
+            // Add server-side save logic here if hosted
+        }
+    </script>
+</body>
+</html>
